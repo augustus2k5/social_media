@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcrypt");
 const User = require("../models/User.js");
@@ -5,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 router.post("/register", async (req, res) => {
-    console.log("REGISTER HIT");
+  console.log("REGISTER HIT");
   try {
     const { username, email, password } = req.body;
 
@@ -51,17 +52,21 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
   try {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(401).json({ message: "Email not found" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: "Wrong password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     if (user.status !== "active") {
@@ -71,24 +76,28 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       {
         id: user._id,
-        role: user.role
+        role: user.role,
       },
-      "SECRET_KEY",
+      process.env.JWT_SECRET, 
       { expiresIn: "1d" }
     );
 
-    res.json({
-      message: "Login success",
+    return res.status(200).json({
       token,
       user: {
         id: user._id,
-        role: user.role,
-        name: user.name
-      }
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar || "",
+        role: user.role
+      },
     });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("LOGIN ERROR:", err);
+    return res.status(500).json({
+      message: "Server error",
+    });
   }
 });
 

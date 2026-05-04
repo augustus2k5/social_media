@@ -1,8 +1,11 @@
-import 'package:app/core/theme.dart';
+import 'package:app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:app/features/auth/presentation/bloc/auth_event.dart';
+import 'package:app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:app/features/auth/presentation/widgets/auth_button.dart';
 import 'package:app/features/auth/presentation/widgets/auth_input_field.dart';
 import 'package:app/features/auth/presentation/widgets/login_prompt.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,6 +23,15 @@ class _LoginPageState extends State<LoginPage> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _onLogin() {
+    BlocProvider.of<AuthBloc>(context).add(
+      LoginEvent(
+        email: _emailController.text,
+        password: _passwordController.text,
+      ),
+    );
   }
 
   @override
@@ -45,12 +57,38 @@ class _LoginPageState extends State<LoginPage> {
                 isPassword: true,
               ),
               SizedBox(height: 20),
-              AuthButton(onPressed: () {}, text: "Login"),
+
+              // 🔥 BlocConsumer giống Register
+              BlocConsumer<AuthBloc, AuthState>(
+                builder: (context, state) {
+                  if (state is AuthLoading) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  return AuthButton(
+                    onPressed: _onLogin,
+                    text: "Login",
+                  );
+                },
+                listener: (context, state) {
+                  if (state is AuthSuccess) {
+                    // 🔥 khác register: login → vào app
+                    Navigator.pushReplacementNamed(context, "/chat");
+                  } else if (state is AuthFailure) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(state.error)),
+                    );
+                  }
+                },
+              ),
+
               SizedBox(height: 10),
+
               LoginPrompt(
                 title: "Don't have an account? ",
                 subtitle: "Register",
-                onTap: () {},
+                onTap: () {
+                  Navigator.pushNamed(context, "/register");
+                },
               ),
             ],
           ),
@@ -59,4 +97,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-

@@ -42,7 +42,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.email,
         event.password
       );
-      await _storage.write(key: "token", value: "user.token");
+          final token = await _storage.read(key: "token");
+    print("TOKEN SAU LOGIN: $token");
       emit(AuthSuccess(message: "Login successfully"));
     } catch (e) {
       emit(AuthFailure(error: e.toString()));
