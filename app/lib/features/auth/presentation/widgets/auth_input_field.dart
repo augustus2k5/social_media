@@ -6,10 +6,11 @@ class AuthInputField extends StatelessWidget {
   final IconData icon;
   final TextEditingController controller;
   final bool isPassword;
+  final String? Function(String?)? validator;
 
 
 
-  const AuthInputField({super.key, required this.hint, required this.icon, required this.controller,  this.isPassword = false});
+  const AuthInputField({super.key, required this.hint, required this.icon, required this.controller,  this.isPassword = false, this.validator});
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +25,10 @@ class AuthInputField extends StatelessWidget {
         Icon(icon, color: Colors.grey),
         SizedBox(width: 10),
         Expanded(
-          child: TextField(
+          child: TextFormField(
             controller: controller,
             obscureText: isPassword,
+            validator: validator,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey),

@@ -32,10 +32,13 @@ class AuthRepositoryImpl implements AuthRepository {
     String email,
     String password,
   ) async {
-    return await authRemoteDataSource.register(
+    print("REPO START");
+    final res = await authRemoteDataSource.register(
       username: username,
       email: email,
       password: password,
     );
+    print("REPO END");
+    return res;
   }
 }

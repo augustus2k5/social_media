@@ -17,6 +17,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void dispose() {
@@ -26,12 +27,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onLogin() {
-    BlocProvider.of<AuthBloc>(context).add(
-      LoginEvent(
-        email: _emailController.text,
-        password: _passwordController.text,
-      ),
-    );
+    if (_formKey.currentState!.validate()) {
+      BlocProvider.of<AuthBloc>(context).add(
+        LoginEvent(
+          email: _emailController.text,
+          password: _passwordController.text,
+        ),
+      );
+    }
   }
 
   @override
@@ -40,57 +43,72 @@ class _LoginPageState extends State<LoginPage> {
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AuthInputField(
-                hint: "Email",
-                icon: Icons.email,
-                controller: _emailController,
-              ),
-              SizedBox(height: 20),
-              AuthInputField(
-                hint: "Password",
-                icon: Icons.password,
-                controller: _passwordController,
-                isPassword: true,
-              ),
-              SizedBox(height: 20),
-
-              // 🔥 BlocConsumer giống Register
-              BlocConsumer<AuthBloc, AuthState>(
-                builder: (context, state) {
-                  if (state is AuthLoading) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                  return AuthButton(
-                    onPressed: _onLogin,
-                    text: "Login",
-                  );
-                },
-                listener: (context, state) {
-                  if (state is AuthSuccess) {
-                    // 🔥 khác register: login → vào app
-                    Navigator.pushReplacementNamed(context, "/chat");
-                  } else if (state is AuthFailure) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.error)),
-                    );
-                  }
-                },
-              ),
-
-              SizedBox(height: 10),
-
-              LoginPrompt(
-                title: "Don't have an account? ",
-                subtitle: "Register",
-                onTap: () {
-                  Navigator.pushNamed(context, "/register");
-                },
-              ),
-            ],
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthInputField(
+                  hint: "Email",
+                  icon: Icons.email,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "Email is required";
+                    }
+                    if (!value.contains("@")) {
+                      return "Please enter a valid email";
+                    }
+                    return null;
+                  },
+                  controller: _emailController,
+                ),
+                SizedBox(height: 20),
+                AuthInputField(
+                  hint: "Password",
+                  icon: Icons.password,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Password is required";
+                    }
+                    return null;
+                  },
+                  controller: _passwordController,
+                  isPassword: true,
+                ),
+                SizedBox(height: 20),
+            
+                // 🔥 BlocConsumer giống Register
+                BlocConsumer<AuthBloc, AuthState>(
+                  builder: (context, state) {
+                    if (state is AuthLoading) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    return AuthButton(onPressed: _onLogin, text: "Login");
+                  },
+                  listener: (context, state) {
+                    if (state is AuthSuccess) {
+                      // 🔥 khác register: login → vào app
+                      Navigator.pushReplacementNamed(context, "/chat");
+                    } else if (state is AuthFailure) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(state.error)));
+                    }
+                  },
+                ),
+            
+                SizedBox(height: 10),
+            
+                LoginPrompt(
+                  title: "Don't have an account? ",
+                  subtitle: "Register",
+                  onTap: () {
+                    Navigator.pushNamed(context, "/register");
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
