@@ -20,7 +20,6 @@ class AuthRepositoryImpl implements AuthRepository {
     final user = result.$1;
     final token = result.$2;
 
-    // 🔥 BẮT BUỘC: lưu token
     await tokenService.saveToken(token);
 
     return user;

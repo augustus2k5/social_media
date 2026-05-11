@@ -88,8 +88,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   listener: (context, state) {
                     if (state is AuthSuccess) {
-                      // 🔥 khác register: login → vào app
-                      Navigator.pushReplacementNamed(context, "/chat");
+                      Navigator.pushReplacementNamed(context, "/conversationsPage");
                     } else if (state is AuthFailure) {
                       ScaffoldMessenger.of(
                         context,

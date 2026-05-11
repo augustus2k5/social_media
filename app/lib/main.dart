@@ -7,7 +7,11 @@ import 'package:app/features/auth/domain/usecases/login_use_case.dart';
 import 'package:app/features/auth/domain/usecases/register_use_case.dart';
 import 'package:app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/features/auth/presentation/pages/login_page.dart';
-import 'package:app/message_page.dart';
+import 'package:app/features/conversation/data/datasources/conversation_remote_data_source.dart';
+import 'package:app/features/conversation/data/repositories/conversation_repository_impl.dart';
+import 'package:app/features/conversation/domain/usecases/fetch_conversations_usecase.dart';
+import 'package:app/features/conversation/presentation/bloc/conversation_bloc.dart';
+import 'package:app/features/conversation/presentation/pages/conversations_page.dart';
 import 'package:app/features/auth/presentation/pages/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,14 +19,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 void main() {
   
   final authRepository = AuthRepositoryImpl(authRemoteDataSource: AuthRemoteDataSource(), tokenService: TokenService());
-
-  runApp(MyApp(authRepository: authRepository,));
+  final conversationRepository = ConversationRepositoryImpl(remoteDataSource: ConversationRemoteDataSource(), tokenService: TokenService());
+  runApp(MyApp(authRepository: authRepository, conversationRepository: conversationRepository,));
 }
 
 class MyApp extends StatefulWidget {
   final AuthRepositoryImpl authRepository;
+  final ConversationRepositoryImpl conversationRepository;
 
-  const MyApp({super.key, required this.authRepository});
+  const MyApp({super.key, required this.authRepository, required this.conversationRepository});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -79,19 +84,23 @@ class _MyAppState extends State<MyApp> {
             loginUseCase: LoginUseCase(repository: widget.authRepository),
           ),
         ),
+        BlocProvider(
+          create: (_) => ConversationBloc(
+            fetchConversationsUseCase: FetchConversationsUsecase(widget.conversationRepository)
+          ),
+        ),
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: AppTheme.darkTheme,
         debugShowCheckedModeBanner: false,
-
-        // 🔥 QUAN TRỌNG NHẤT
-        home: token != null ? ChatPage() : LoginPage(),
+        home: token != null ? ConversationsPage() : LoginPage(),
 
         routes: {
           "/login": (_) => LoginPage(),
           "/register": (_) => RegisterPage(),
           "/chat": (_) => ChatPage(),
+          "/conversationsPage": (_) => ConversationsPage(),
         },
       ),
     );
