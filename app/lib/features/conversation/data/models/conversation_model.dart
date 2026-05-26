@@ -9,14 +9,28 @@ class ConversationModel extends ConversationEntity {
     required super.lastMessageTime,
   });
 
-  factory ConversationModel.fromJson(Map<String, dynamic> json) {
-    return ConversationModel(
-      id: json['id'],
-      user: UserModel.fromJson(json['user']),
-      lastMessage: json['lastMessage'] ?? '',
-      lastMessageTime: json['lastMessageTime'] != null
-          ? DateTime.parse(json['lastMessageTime'])
-          : null,
-    );
-  }
+  factory ConversationModel.fromJson(
+  Map<String, dynamic> json,
+) {
+
+  final userJson = json['user'];
+
+  userJson['id'] = userJson['_id'];
+
+  return ConversationModel(
+    id: json['conversationId'],
+
+    user: UserModel.fromJson(userJson),
+
+    lastMessage:
+        json['lastMessage'] ?? '',
+
+    lastMessageTime:
+        json['lastMessageTime'] != null
+            ? DateTime.parse(
+                json['lastMessageTime'],
+              )
+            : null,
+  );
+}
 }

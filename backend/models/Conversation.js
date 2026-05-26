@@ -9,8 +9,21 @@ const conversationSchema = new mongoose.Schema(
         required: true,
       },
     ],
+
+    lastMessage: {
+      type: String,
+      default: "",
+    },
+
+    lastMessageTime: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Conversation", conversationSchema);
+module.exports = mongoose.model(
+  "Conversation",
+  conversationSchema
+);

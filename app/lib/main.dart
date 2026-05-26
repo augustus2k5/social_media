@@ -1,4 +1,7 @@
-import 'package:app/chat_page.dart';
+import 'package:app/features/chat/data/datasources/messages_remote_data_source.dart';
+import 'package:app/features/chat/data/repositories/message_repository_impl.dart';
+import 'package:app/features/chat/domain/usecases/fetch_messages_use_case.dart';
+import 'package:app/features/chat/presentation/bloc/chat_bloc.dart';
 import 'package:app/core/theme.dart';
 import 'package:app/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:app/features/auth/data/datasources/token_service.dart';
@@ -15,19 +18,41 @@ import 'package:app/features/conversation/presentation/pages/conversations_page.
 import 'package:app/features/auth/presentation/pages/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:app/features/chat/domain/usecases/send_message_use_case.dart';
 
 void main() {
-  
-  final authRepository = AuthRepositoryImpl(authRemoteDataSource: AuthRemoteDataSource(), tokenService: TokenService());
-  final conversationRepository = ConversationRepositoryImpl(remoteDataSource: ConversationRemoteDataSource(), tokenService: TokenService());
-  runApp(MyApp(authRepository: authRepository, conversationRepository: conversationRepository,));
+  final authRepository = AuthRepositoryImpl(
+    authRemoteDataSource: AuthRemoteDataSource(),
+    tokenService: TokenService(),
+  );
+  final conversationRepository = ConversationRepositoryImpl(
+    remoteDataSource: ConversationRemoteDataSource(),
+    tokenService: TokenService(),
+  );
+  final messagesRepository = MessageRepositoryImpl(
+    remoteDataSource: MessageRemoteDataSource(),
+    tokenService: TokenService(),
+  );
+  runApp(
+    MyApp(
+      authRepository: authRepository,
+      conversationRepository: conversationRepository,
+      messageRepository: messagesRepository,
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
   final AuthRepositoryImpl authRepository;
   final ConversationRepositoryImpl conversationRepository;
+  final MessageRepositoryImpl messageRepository;
 
-  const MyApp({super.key, required this.authRepository, required this.conversationRepository});
+  const MyApp({
+    super.key,
+    required this.authRepository,
+    required this.conversationRepository,
+    required this.messageRepository,
+  });
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -44,15 +69,15 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> forceLogout() async {
-  final tokenService = TokenService();
+    final tokenService = TokenService();
 
-  await tokenService.clearToken(); 
+    await tokenService.clearToken();
 
-  setState(() {
-    isLoading = false;
-    token = null;
-  });
-}
+    setState(() {
+      isLoading = false;
+      token = null;
+    });
+  }
 
   Future<void> checkLogin() async {
     final tokenService = TokenService();
@@ -70,9 +95,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const MaterialApp(
-        home: Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
@@ -86,7 +109,20 @@ class _MyAppState extends State<MyApp> {
         ),
         BlocProvider(
           create: (_) => ConversationBloc(
-            fetchConversationsUseCase: FetchConversationsUsecase(widget.conversationRepository)
+            fetchConversationsUseCase: FetchConversationsUsecase(
+              widget.conversationRepository,
+            ),
+          ),
+        ),
+        BlocProvider(
+          create: (_) => ChatBloc(
+            fetchMessagesUseCase: FetchMessagesUseCase(
+              messagesRepository: widget.messageRepository,
+            ),
+
+            sendMessageUseCase: SendMessageUseCase(
+              messagesRepository: widget.messageRepository,
+            ),
           ),
         ),
       ],
@@ -99,7 +135,6 @@ class _MyAppState extends State<MyApp> {
         routes: {
           "/login": (_) => LoginPage(),
           "/register": (_) => RegisterPage(),
-          "/chat": (_) => ChatPage(),
           "/conversationsPage": (_) => ConversationsPage(),
         },
       ),

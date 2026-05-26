@@ -4,6 +4,7 @@ import 'package:app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final RegisterUseCase registerUseCase;
@@ -14,6 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     : super(AuthInitial()) {
     on<RegisterEvent>(_onRegister);
     on<LoginEvent>(_onLogin);
+    on<LogoutEvent>(_onLogout);
   }
 
   Future<void> _onRegister(RegisterEvent event, Emitter<AuthState> emit) async {
@@ -93,10 +95,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final user = await loginUseCase.call(event.email, event.password);
       final token = await _storage.read(key: "token");
+      if (token != null) {
+        final decodedToken = JwtDecoder.decode(token);
+
+        final userId = decodedToken["id"];
+
+        await _storage.write(key: "userId", value: userId);
+
+        print("USER ID SAVED: $userId");
+      }
       print("TOKEN SAU LOGIN: $token");
+      await _storage.write(key: "token", value: token);
+
+      await _storage.write(key: "userId", value: user.id);
       emit(AuthSuccess(message: "Login successfully"));
     } catch (e) {
       emit(AuthFailure(error: e.toString()));
     }
+  }
+
+  Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
+    await _storage.delete(key: "token");
+
+    await _storage.delete(key: "userId");
+
+    emit(AuthInitial());
   }
 }

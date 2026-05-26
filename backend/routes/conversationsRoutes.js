@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const Conversation = require("../models/Conversation");
-const Message = require("../models/Message");
 const User = require("../models/User");
 const verifyToken = require("../middleware/verifyToken");
 
@@ -23,16 +22,27 @@ router.get("/", verifyToken, async (req, res) => {
         const otherUser = await User.findById(otherUserId).select(
           "username email avatar"
         );
+        console.log("otherUser:", otherUser);
 
-        const lastMessage = await Message.findOne({
-          conversationId: conv._id,
-        }).sort({ createdAt: -1 });
-
+        // const lastMessage = await Message.findOne({
+        //   conversationId: conv._id,
+        // }).sort({ createdAt: -1 });
+        console.log("participants:", conv.participants);
+        console.log("userId:", userId);
+        console.log("otherUserId:", otherUserId);
         return {
-          conversationId: conv._id,
-          user: otherUser,
-          lastMessage: lastMessage?.content || "",
-          lastMessageTime: lastMessage?.createdAt || null,
+          conversationId:
+            conv._id,
+
+          user:
+            otherUser,
+
+          lastMessage:
+            conv.lastMessage || "",
+
+          lastMessageTime:
+            conv.lastMessageTime ||
+            null,
         };
       })
     );
@@ -53,7 +63,6 @@ router.post("/", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "receiverId required" });
     }
 
-    // ❗ check đã tồn tại chưa
     const existing = await Conversation.findOne({
       participants: { $all: [userId, receiverId] },
       $expr: { $eq: [{ $size: "$participants" }, 2] },
@@ -63,7 +72,6 @@ router.post("/", verifyToken, async (req, res) => {
       return res.status(200).json(existing);
     }
 
-    // tạo mới
     const conversation = new Conversation({
       participants: [userId, receiverId],
     });
